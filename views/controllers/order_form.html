@@ -1,0 +1,13 @@
+
+<form id="{$formId}" action="{$fields.formActionUrl}" method="post">
+	<input type="hidden" name="seccode" value="{$fields.seccode}" />
+	<input type="hidden" name="spShopId" value="{$fields.spShopId}" />
+	<input type="hidden" name="spCurrency" value="{$fields.spCurrency}" />
+	<input type="hidden" name="lang" value="{$fields.lang}" />
+	<input type="hidden" name="tabNum" value="{$fields.tabNum}" />
+	<input type="hidden" name="spUserEmail" value="{$email}" />
+	<input type="hidden" name="spAmount" value="{$sale->totalAmount}" />
+	<input type="hidden" name="spPurpose" value="Оплата чего то почему то..." />
+	
+	<input type="hidden" name="spUserDataHash" value="{$sale->hash}" />
+</form>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<plugin>
+	<name>Zarinpal</name>
+	<key>billingsprypay</key>
+	<description>سامانه پرداخت اينترنتي</description>
+    <author>Zarinpal developement team</author>
+    <authorEmail>info@zarinpal.com</authorEmail>
+	<authorUrl>http://www.zarinpal.com</authorUrl>
+	<developerKey></developerKey>
+    <build>1</build>
+    <copyright>(C) 2013 zarinpal.com. All rights reserved.</copyright>
+    <license>BSD</license>
+    <licenseUrl>http://www.opensource.org/licenses/bsd-license.php</licenseUrl>
+</plugin>
