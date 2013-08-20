@@ -22,16 +22,16 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
 	$client = new SoapClient('https://de.zarinpal.com/pg/services/WebGate/wsdl', array('encoding'=>'UTF-8'));
 	$res = $client->PaymentRequest(
 	array(
-					'MerchantID' 	=> $merchent ,
+					'MerchantID' 		=> $merchent ,
 					'Amount' 		=> $amount ,
-					'Description' 	=> $desc ,
+					'Description' 		=> $desc ,
 					'Email' 		=> '' ,
 					'Mobile' 		=> '' ,
-					'CallbackURL' 	=> $redirect
+					'CallbackURL' 		=> $redirect
 
 					)
 	 );
-    return $res->Authority;
+    return $res;
 	}
 	
     public function get($merchent,$au,$amount){
@@ -40,10 +40,10 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
 			array(
 					'MerchantID'	 => $merchent ,
 					'Authority' 	 => $au ,
-					'Amount'	 	=> $amount
+					'Amount'	=> $amount
 				)
 		);
-        return $res->Status;
+        return $res;
     }     
 
     public function form()
@@ -83,10 +83,12 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
         $amount = (int)$sale->totalAmount;
         $redirect = urlencode('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'/notify');
         $result = $this->send($desc,$merchent,$amount,$redirect);
-        if(srtlen($result) == 36 )){
+        if($result->Status == 100 )){
             $url = "https://www.zarinpal.com/pg/StartPay/" . $result->Authority . "/";
             $this->redirect($fields['formActionUrl']);
             die();
+        }else{
+        	echo'ERR: '.$result->Status;
         }
 
         if ( $billingService->prepareSale($adapter, $sale) )
@@ -131,7 +133,7 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
         $merchent = $fields['seccode'];
         $amount = $sale->totalAmount;
         $result = $this->get($merchent,$au,$amount);
-        if ( $result == 1 )
+        if ( $result->Status == 100 )
         {
 
             if ( $status == 'COMPLETED' )
@@ -164,7 +166,8 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
         }
         else
         {
-            $this->canceled();
+        	echo'ERR:'.$result->Status;
+       	    $this->canceled();
             exit;
         }
     }
