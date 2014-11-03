@@ -83,7 +83,7 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
         $amount = (int)$sale->totalAmount;
         $redirect = urlencode('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'/notify');
         $result = $this->send($desc,$merchent,$amount,$redirect);
-        if($result->Status == 100 )){
+        if($result->Status == 100 ){
             $url = "https://www.zarinpal.com/pg/StartPay/" . $result->Authority . "/";
             $this->redirect($fields['formActionUrl']);
             die();
