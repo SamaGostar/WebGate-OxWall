@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (c) 2013, zarinpal.com.
+ * Copyright (c) 2021, zarinpal.com.
  * All rights reserved.
 
  * ATTENTION: This commercial software is intended for use with Oxwall Free Community Software http://www.oxwall.org/ or http://www.oxwall.su/
@@ -19,32 +19,52 @@
 class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
 {
     public function send($desc,$merchent,$amount,$redirect){
-	$client = new SoapClient('https://www.zarinpal.com/pg/services/WebGate/wsdl', array('encoding'=>'UTF-8'));
-	$res = $client->PaymentRequest(
-	array(
-					'MerchantID' 		=> $merchent ,
-					'Amount' 		=> $amount ,
-					'Description' 		=> $desc ,
-					'Email' 		=> '' ,
-					'Mobile' 		=> '' ,
-					'CallbackURL' 		=> $redirect
 
-					)
-	 );
-    return $res;
-	}
-	
-    public function get($merchent,$au,$amount){
-	$client = new SoapClient('https://www.zarinpal.com/pg/services/WebGate/wsdl', array('encoding'=>'UTF-8'));
-	$res = $client->PaymentVerification(
-			array(
-					'MerchantID'	 => $merchent ,
-					'Authority' 	 => $au ,
-					'Amount'	=> $amount
-				)
-		);
+        $param_request = array(
+            'merchant_id' => $merchent,
+            'amount' => $amount * 10,
+            'description' => $desc,
+            'callback_url' => $redirect
+        );
+        $jsonData = json_encode($param_request);
+
+        $ch = curl_init('https://api.zarinpal.com/pg/v4/payment/request.json');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'ZarinPal Rest Api v4');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($jsonData)
+        ));
+
+        $res = curl_exec($ch);
+        $err = curl_error($ch);
+        $res = json_decode($res, true, JSON_PRETTY_PRINT);
+        curl_close($ch);
         return $res;
-    }     
+    }
+
+    public function get($merchent,$au,$amount){
+        $param_verify = array("merchant_id" => $merchent, "authority" => $au, "amount" => $amount * 10);
+        $jsonData = json_encode($param_verify);
+        $ch = curl_init('https://api.zarinpal.com/pg/v4/payment/verify.json');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'ZarinPal Rest Api v4');
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($jsonData)
+        ));
+
+        $res = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+        $res = json_decode($res, true);
+
+        return $res;
+    }
 
     public function form()
     {
@@ -83,12 +103,12 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
         $amount = (int)$sale->totalAmount;
         $redirect = urlencode('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'/notify');
         $result = $this->send($desc,$merchent,$amount,$redirect);
-        if($result->Status == 100 ){
-            $url = "https://www.zarinpal.com/pg/StartPay/" . $result->Authority . "/";
+        if($result['data']['code'] == 100 ){
+            $url = "https://www.zarinpal.com/pg/StartPay/" .$result['data']["authority"] . "/";
             $this->redirect($fields['formActionUrl']);
             die();
         }else{
-        	echo'ERR: '.$result->Status;
+            echo'ERR: '.$result['errors']['code'];
         }
 
         if ( $billingService->prepareSale($adapter, $sale) )
@@ -133,7 +153,7 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
         $merchent = $fields['seccode'];
         $amount = $sale->totalAmount;
         $result = $this->get($merchent,$au,$amount);
-        if ( $result->Status == 100 )
+        if ( $result['data']['code'] == 100 )
         {
 
             if ( $status == 'COMPLETED' )
@@ -145,29 +165,29 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
                     if ( $billingService->verifySale($adapter, $sale) )
                     {
                         $sale = $billingService->getSaleById($sale->id);
-                                
+
                         $productAdapter = $billingService->getProductAdapter($sale->entityKey);
 
                         if ( $productAdapter )
                         {
                             $billingService->deliverSale($productAdapter, $sale);
                             $this->completed();
-							die('OK');
+                            die('OK');
                         }
                     }
-					die;
+                    die;
                 } else {
                     $this->completed();
-					die('OK');
-			    }
+                    die('OK');
+                }
             }
             $this->canceled();
-			die;
+            die;
         }
         else
         {
-        	echo'ERR:'.$result->Status;
-       	    $this->canceled();
+            echo'ERR:'.$result['errors']['code'];
+            $this->canceled();
             exit;
         }
     }
@@ -178,7 +198,7 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
 
         $this->redirect(BOL_BillingService::getInstance()->getOrderCompletedPageUrl($hash));
     }
-    
+
     public function canceled()
     {
         $this->redirect(BOL_BillingService::getInstance()->getOrderCancelledPageUrl());
