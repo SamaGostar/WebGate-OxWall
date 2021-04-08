@@ -104,9 +104,15 @@ class BILLINGSPRYPAY_CTRL_Order extends OW_ActionController
         $redirect = urlencode('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'/notify');
         $result = $this->send($desc,$merchent,$amount,$redirect);
         if($result['data']['code'] == 100 ){
-            $url = "https://www.zarinpal.com/pg/StartPay/" .$result['data']["authority"] . "/";
-            $this->redirect($fields['formActionUrl']);
-            die();
+            echo' <html><body>
+                    <script type="text/javascript" src="https://cdn.zarinpal.com/zarinak/v1/checkout.js"></script>
+                    <script type="text/javascript">
+                    window.onload = function () {
+                    Zarinak.setAuthority("' . $result['data']['authority'] . '");
+                    Zarinak.showQR();
+                    Zarinak.open();
+              };
+            </script></body></html>';
         }else{
             echo'ERR: '.$result['errors']['code'];
         }
