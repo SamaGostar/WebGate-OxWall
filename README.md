@@ -1,2 +1,2 @@
-ZarinpalQR-OxWall
+ZarinGate-OxWall
 ================
